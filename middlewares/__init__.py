@@ -1,1 +1,1 @@
-from .validations import (ReqValid)
+from .validations import (Valid, V)

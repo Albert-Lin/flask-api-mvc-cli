@@ -1,10 +1,11 @@
 """
-Controller set, include all controllers under "Controllers"
-folder. We are using "Singleton Pattern". In full system,
-each controller will only have one instance.
+import all controller classes
 """
+from .example_controller import ExampleController
 
 
-class Ctrl:
-    pass
-
+"""
+for Singleton design pattern,
+each controller should new an instance
+"""
+example = ExampleController()
