@@ -9,14 +9,14 @@ class Validator:
         pass
 
     @staticmethod
-    def validator(method=None, rules={}):
+    def validator(method=None, rules={}, request=None):
         def decorator(fun):
             def process(*args, **kwargs):
                 valid_result = {
                     "post": Validator._post_validator,
                     "get": Validator._get_validator,
                     "path": Validator._path_param_validator,
-                }[method](args, kwargs, rules)
+                }[method](args, rules, request)
 
                 if valid_result["code"] == 200:
                     return fun(*args, **kwargs)
@@ -29,20 +29,20 @@ class Validator:
         return decorator
 
     @staticmethod
-    def _post_validator(args, kwargs, rules):
-        req_body = kwargs["request"].get_json(force=True)
+    def _post_validator(args, rules, request):
+        req_body = request.get_json(force=True)
         return Validator._validation_iterator(req_body, rules)
 
     @staticmethod
-    def _get_validator(args, kwargs, rules):
-        query_str_dict = dict(kwargs["request"].args)
+    def _get_validator(args, rules, request):
+        query_str_dict = dict(request.args)
         req_body = {}
         for key in query_str_dict:
             req_body[key] = query_str_dict[key][0]
         return Validator._validation_iterator(req_body, rules)
 
     @staticmethod
-    def _path_param_validator(args, kwargs, rules):
+    def _path_param_validator(args, rules, request):
         req_body = {}
         for i in range(len(args)):
             if i > 0:
@@ -58,8 +58,10 @@ class Validator:
                     valid_result = Validator._validation_iterator(req_body[key], rules[key])
                 else:
                     valid_result = Validator._column_validation(req_body, key, rules[key])
-            else:
+            elif type(rules[key]) == dict:
                 valid_result = {"code": 500, "message": "Request body structure error"}
+            else:
+                valid_result = Validator._column_validation(req_body, key, rules[key])
 
             if valid_result["code"] != 200:
                 break

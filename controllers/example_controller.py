@@ -1,4 +1,3 @@
-from middlewares import *
 from transformers import SimpleDataTrans
 from services import ex_service
 
@@ -7,10 +6,6 @@ class ExampleController:
     def __init__(self):
         pass
 
-    @Valid.validator(method="path", rules={
-        0: [V.REQ, V.INT],
-        1: [V.REQ, V.STR],
-    })
     def path_param(self, user_id, message):
         """
         01. The keys of rules is index of *arg of
@@ -59,3 +54,48 @@ class ExampleController:
             response.status = 500
             response.message = "api 'path_param' is fail"
             return response.to_json()
+
+    def query_string(self, request):
+        """
+        01. Different from path_param, if the method of
+        validation is "get", the key of rules should be
+        parameter name
+
+        02. Because all types of parameters value will be
+        string, it is not necessary to add type rules
+        (e.g., V.INT, V.STR)
+
+        :param request: flask request
+        :return: JSON
+        """
+        # 01. access data by request.args.get('{parameter_name}');
+        user_id = request.args.get('user_id')
+        num0 = request.args.get('num0')
+        num1 = request.args.get('num1')
+
+        try:
+            # 02. invoke service
+            result = ex_service.sum(int(num0), int(num1))
+
+            # 03. transform and return response
+            return SimpleDataTrans.success_json_response(result)
+        except Exception as ex:
+            trans = SimpleDataTrans()
+            trans.message = str(ex)
+            trans.status = 500
+            return trans.to_json()
+
+    def post_json(self, request):
+        """
+        01. In post validation, you might set customise
+        rules for each column, even the nest columns
+        :param request: flask request
+        :return: JSON
+        """
+        request_body = request.get_json(force=True)
+        num0 = request_body["num0"]
+        num1 = request_body["num1"]
+
+        result = ex_service.sum(num0, num1)
+
+        return SimpleDataTrans.success_json_response(result*10)
