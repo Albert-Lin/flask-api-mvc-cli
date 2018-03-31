@@ -1,5 +1,5 @@
 import flask
-import route.blueprint_register as register_list
+import routes.blueprint_register as register_list
 from .example_route import *
 
 all_blue_list = []

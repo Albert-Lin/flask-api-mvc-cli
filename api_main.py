@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
 from configs import flask_config, flask_xss
-from route import all_blue_list
+from routes import all_blue_list
 
 app = Flask(__name__)
 cors = CORS(app, resources=flask_xss)
