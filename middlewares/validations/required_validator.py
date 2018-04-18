@@ -6,7 +6,7 @@ class RequiredValidator(AbstractValidator):
         AbstractValidator.__init__(self)
         self._default_error_message = "column(%s) is required"
 
-    def validator(self, dict_data, key):
+    def validator(self, dict_data, key, params):
         return dict_data is not None and key in dict_data
 
 

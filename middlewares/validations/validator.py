@@ -1,5 +1,7 @@
 from transformers import (SimpleDataTrans)
+from .abstract_validator import AbstractValidator
 from .required_validator import RequiredValidator
+from flask import request
 
 
 class Validator:
@@ -9,14 +11,14 @@ class Validator:
         pass
 
     @staticmethod
-    def validator(method=None, rules={}, request=None):
+    def validator(method=None, rules={}):
         def decorator(fun):
             def process(*args, **kwargs):
                 valid_result = {
                     "post": Validator._post_validator,
                     "get": Validator._get_validator,
                     "path": Validator._path_param_validator,
-                }[method](args, rules, request)
+                }[method](args, kwargs, rules)
 
                 if valid_result["code"] == 200:
                     return fun(*args, **kwargs)
@@ -29,12 +31,12 @@ class Validator:
         return decorator
 
     @staticmethod
-    def _post_validator(args, rules, request):
+    def _post_validator(args, kwargs, rules):
         req_body = request.get_json(force=True)
         return Validator._validation_iterator(req_body, rules)
 
     @staticmethod
-    def _get_validator(args, rules, request):
+    def _get_validator(args, kwargs, rules):
         query_str_dict = dict(request.args)
         req_body = {}
         for key in query_str_dict:
@@ -42,7 +44,7 @@ class Validator:
         return Validator._validation_iterator(req_body, rules)
 
     @staticmethod
-    def _path_param_validator(args, rules, request):
+    def _path_param_validator(args, kwargs, rules):
         req_body = {}
         for i in range(len(args)):
             if i > 0:
@@ -82,11 +84,14 @@ class Validator:
         for rule in column_rules:
             try:
                 # 04. invoke rule validator
-                valid_fun_info = rule.info
-                error_message = valid_fun_info["message"]
+                rule_instance = rule
+                valid_params = None
+                if not isinstance(rule, AbstractValidator):
+                    rule_instance = rule[0]
+                    valid_params = rule[1]
                 valid_result = Validator._general_validator(
-                    valid_fun_info["fun"],
-                    error_message,
+                    rule_instance,
+                    valid_params,
                     req_body,
                     key,
                     nullable=nullable
@@ -101,34 +106,38 @@ class Validator:
         return result
 
     @staticmethod
-    def _general_validator(valid_fun, valid_message, req_body, key, nullable=False):
-        # 01. initialize response
+    def _general_validator(valid_instance, valid_params, req_body, key, nullable=False):
+        # 01. initialize
+        valid_fun = valid_instance.validator
         success = {"code": 200}
-        try:
-            fail_response = {"code": 500, "message": valid_message % key}
-        except Exception as e:
-            fail_response = {"code": 500, "message": valid_message}
-
         # 02. column required validation
         required_result = Validator._required(req_body, key)
         # 03. input valid_fun validation
         if required_result["code"] == 200:
-            if valid_fun(req_body, key):
+            if valid_fun(req_body, key, valid_params):
                 return success
             else:
-                return fail_response
+                return Validator._set_fail_response(valid_instance, key)
         else:
             if not nullable:
-                return fail_response
+                return Validator._set_fail_response(valid_instance, key)
             else:
                 return success
 
     @staticmethod
     def _required(req_body, key, nullable=True):
-        valid_info = Validator._req.info
-        if valid_info["fun"](req_body, key):
+        required_validator = Validator._req
+        valid_fun = required_validator.validator
+        if valid_fun(req_body, key, None):
             return {"code": 200}
         else:
-            return {"code": 500, "message": valid_info["message"]}
+            return {"code": 500, "message": required_validator.message}
 
+    @staticmethod
+    def _set_fail_response(valid_instance, key):
+        try:
+            fail_response = {"code": 500, "message": valid_instance.message % key}
+        except Exception as e:
+            fail_response = {"code": 500, "message": valid_instance.message}
+        return fail_response
 
