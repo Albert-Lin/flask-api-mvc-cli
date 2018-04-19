@@ -1,12 +1,11 @@
-import flask
-import routes.blueprint_register as register_list
-from .example_route import *
+from utils import DynamicImporter
+from routes.blueprint_register import Bp
+
+DynamicImporter.package("routes")
 
 all_blue_list = []
-for item in dir(register_list):
-    data = getattr(register_list, item)
-    if type(data) == flask.blueprints.Blueprint:
-        all_blue_list.append(data)
+for name in Bp.blueprint_name_list:
+    all_blue_list.append(getattr(Bp, name))
 
 all_blue_list = tuple(all_blue_list)
 

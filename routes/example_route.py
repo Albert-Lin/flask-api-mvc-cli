@@ -1,13 +1,13 @@
 from flask import request
 import controllers as ctrl
-from .blueprint_register import *
+from .blueprint_register import Bp
 from middlewares import *
 
 
-@path.route("/api/<int:user_id>/<string:message>", methods=["GET"])
+@Bp.path.route("/api/<int:user_id>/<string:message>", methods=["GET"])
 @Valid.validator(method="path", rules={
-    0: [V.REQ, V.INT],
-    1: [V.REQ, V.STR],
+    "user_id": [V.REQ, V.INT],
+    "message": [V.REQ, V.STR],
 })
 def path_param(user_id, message):
     """
@@ -20,8 +20,8 @@ def path_param(user_id, message):
     return ctrl.example.path_param(user_id, message)
 
 
-@get.route("/api/query-string", methods=["GET"])
-@Valid.validator(method="get", request=request, rules={
+@Bp.get.route("/api/query-string", methods=["GET"])
+@Valid.validator(method="get", rules={
     "user_id": [V.REQ]
 })
 def query_string():
@@ -34,8 +34,8 @@ def query_string():
     return ctrl.example.query_string(request)
 
 
-@post.route("/api/post_json", methods=["POST"])
-@Valid.validator(method="post", request=request, rules={
+@Bp.post.route("/api/post_json", methods=["POST"])
+@Valid.validator(method="post", rules={
     "num0": [V.REQ, V.INT],
     "num1": [V.REQ, V.INT]
 })

@@ -18,7 +18,7 @@ class Validator:
                     "post": Validator._post_validator,
                     "get": Validator._get_validator,
                     "path": Validator._path_param_validator,
-                }[method](args, kwargs, rules)
+                }[method](kwargs, rules)
 
                 if valid_result["code"] == 200:
                     return fun(*args, **kwargs)
@@ -31,12 +31,12 @@ class Validator:
         return decorator
 
     @staticmethod
-    def _post_validator(args, kwargs, rules):
+    def _post_validator(kwargs, rules):
         req_body = request.get_json(force=True)
         return Validator._validation_iterator(req_body, rules)
 
     @staticmethod
-    def _get_validator(args, kwargs, rules):
+    def _get_validator(kwargs, rules):
         query_str_dict = dict(request.args)
         req_body = {}
         for key in query_str_dict:
@@ -44,11 +44,8 @@ class Validator:
         return Validator._validation_iterator(req_body, rules)
 
     @staticmethod
-    def _path_param_validator(args, kwargs, rules):
-        req_body = {}
-        for i in range(len(args)):
-            if i > 0:
-                req_body[i-1] = args[i]
+    def _path_param_validator(kwargs, rules):
+        req_body = kwargs
         return Validator._validation_iterator(req_body, rules)
 
     @staticmethod

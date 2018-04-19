@@ -1,5 +1,18 @@
 from flask import Blueprint
 
-path = Blueprint("path", __name__, template_folder='routes')
-get = Blueprint("get", __name__, template_folder='routes')
-post = Blueprint("post", __name__, template_folder='routes')
+
+class Bp:
+    blueprint_name_list = [
+        "path",
+        "get",
+        "post",
+    ]
+
+    @staticmethod
+    def generate_bp_list():
+        for name in Bp.blueprint_name_list:
+            setattr(Bp, name, Blueprint(name, __name__, template_folder='routes'))
+
+
+Bp.generate_bp_list()
+
